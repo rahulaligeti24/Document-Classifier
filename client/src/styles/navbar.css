@@ -30,7 +30,7 @@
   color: var(--text-primary);
   text-decoration: none;
   letter-spacing: -0.02em;
-  transition: var(--transition);
+  transition: var(--transition-base);
 }
 
 .navbar-brand .brand-link:hover { color: var(--primary); }
@@ -60,7 +60,7 @@
   color: var(--text-secondary);
   text-decoration: none;
   border-radius: var(--radius-sm);
-  transition: var(--transition);
+  transition: var(--transition-base);
 }
 
 .nav-link:hover {
@@ -116,7 +116,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: var(--transition);
+  transition: var(--transition-base);
 }
 
 .logout-btn:hover {

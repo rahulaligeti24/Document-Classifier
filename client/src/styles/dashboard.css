@@ -65,7 +65,7 @@
   flex-shrink: 0;
   border-radius: var(--radius-sm);
   padding: 2px 6px;
-  transition: var(--transition);
+  transition: var(--transition-base);
 }
 .close-btn:hover { opacity: 1; }
 

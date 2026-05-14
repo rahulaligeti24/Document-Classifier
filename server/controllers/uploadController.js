@@ -71,7 +71,7 @@ exports.uploadFile = async (req, res) => {
         // Send to Python ML service
         const mlResponse = await axios.post(process.env.ML_SERVICE_URL, formData, {
           headers: formData.getHeaders(),
-          timeout: 30000, // 30 second timeout
+          timeout: 90000, // 90 second timeout for ML inference
         });
 
         const { data: responseData } = mlResponse.data;

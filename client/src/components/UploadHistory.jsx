@@ -28,12 +28,15 @@ const UploadHistory = ({ refreshTrigger = 0, selectedLabel = null, onLabelChange
       const response = await documentAPI.getHistory({ page, limit: 100 });
       const allUploads = response.data.data.uploads || [];
       
-      // Extract unique labels and count them
+      // Filter ONLY completed uploads (exclude failed ones)
+      const completedUploads = allUploads.filter((upload) => upload.status !== 'failed');
+      
+      // Extract unique labels and count them (from completed uploads only)
       const labels = {};
       const counts = {};
       
-      allUploads.forEach((upload) => {
-        if (upload.label && upload.label !== 'Unknown') {
+      completedUploads.forEach((upload) => {
+        if (upload.label && upload.label !== 'Unknown' && upload.label !== 'Pending') {
           if (!labels[upload.label]) {
             labels[upload.label] = true;
             counts[upload.label] = 0;
@@ -47,8 +50,8 @@ const UploadHistory = ({ refreshTrigger = 0, selectedLabel = null, onLabelChange
       
       // Filter by selected label if any
       const filteredUploads = selectedLabel 
-        ? allUploads.filter((upload) => upload.label === selectedLabel)
-        : allUploads;
+        ? completedUploads.filter((upload) => upload.label === selectedLabel)
+        : completedUploads;
 
       setHistory(filteredUploads);
       setTotalPages(response.data.data.pagination?.totalPages || 1);
@@ -164,7 +167,7 @@ const UploadHistory = ({ refreshTrigger = 0, selectedLabel = null, onLabelChange
               className={`filter-btn ${selectedLabel === null ? 'active' : ''}`}
               onClick={() => handleLabelFilter(null)}
             >
-              All Documents ({Object.values(labelCounts).reduce((a, b) => a + b, 0)})
+              All Classified ({Object.values(labelCounts).reduce((a, b) => a + b, 0)})
             </button>
             {allLabels.map((label) => (
               <button
@@ -189,7 +192,7 @@ const UploadHistory = ({ refreshTrigger = 0, selectedLabel = null, onLabelChange
 
       {history.length === 0 && !loading && (
         <div className="empty-state">
-          <p>{selectedLabel ? `No documents found with label "${selectedLabel}"` : 'No documents uploaded yet. Start by uploading a PDF file!'}</p>
+          <p>{selectedLabel ? `No documents found with label "${selectedLabel}"` : 'No classified documents yet. Upload and classify PDF files to get started!'}</p>
         </div>
       )}
 

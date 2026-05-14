@@ -157,7 +157,6 @@
   color: var(--text-muted);
   cursor: not-allowed;
 }
-}
 
 /* Password wrapper for show/hide toggle */
 .password-wrapper {
@@ -180,10 +179,15 @@
   padding: 4px;
   border-radius: var(--radius-sm);
   transition: var(--transition-base);
-  display: flex; align-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1rem;
 }
-.password-toggle:hover { color: var(--text-secondary); }
+
+.password-toggle:hover { 
+  color: var(--text-secondary); 
+}
 
 /* Password strength bar */
 .password-strength {

@@ -29,7 +29,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # Uploads
+uploads/
 uploads/temp/
+uploads/documents/
 
 # Build
 dist/

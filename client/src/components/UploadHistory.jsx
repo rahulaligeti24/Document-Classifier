@@ -124,7 +124,10 @@ const UploadHistory = ({ refreshTrigger = 0, selectedLabel = null, onLabelChange
   };
 
   const getLabelBadgeClass = (label) => {
-    return `label-badge ${label?.toLowerCase().replace(/\s+/g, '-')}`;
+    if (!label) return 'label-badge unknown';
+    // Convert to lowercase and replace spaces/underscores with hyphens for CSS class matching
+    const normalizedLabel = label.toLowerCase().replace(/[\s_]+/g, '-');
+    return `label-badge ${normalizedLabel}`;
   };
 
   const handleLabelFilter = (label) => {
@@ -198,6 +201,7 @@ const UploadHistory = ({ refreshTrigger = 0, selectedLabel = null, onLabelChange
                 <tr>
                   <th>File Name</th>
                   <th>Predicted Label</th>
+                  <th>Confidence</th>
                   <th>Upload Time</th>
                   <th>Action</th>
                 </tr>
@@ -228,6 +232,25 @@ const UploadHistory = ({ refreshTrigger = 0, selectedLabel = null, onLabelChange
                       <span className={getLabelBadgeClass(upload.label)}>
                         {upload.label || 'Pending'}
                       </span>
+                    </td>
+                    <td className="confidence-cell">
+                      {upload.confidence ? (
+                        <div className="confidence-display">
+                          <span className="confidence-value">{(upload.confidence * 100).toFixed(1)}%</span>
+                          <div className="confidence-bar">
+                            <div 
+                              className="confidence-fill"
+                              style={{
+                                width: `${Math.min(upload.confidence * 100, 100)}%`,
+                                backgroundColor: upload.confidence > 0.8 ? '#10b981' : 
+                                                upload.confidence > 0.6 ? '#f59e0b' : '#ef4444'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{color: '#9ca3af'}}>—</span>
+                      )}
                     </td>
                     <td className="time-cell">{formatDate(upload.uploadedAt)}</td>
                     <td className="action-cell">

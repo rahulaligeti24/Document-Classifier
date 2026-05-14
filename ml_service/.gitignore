@@ -42,11 +42,28 @@ env/
 .env.*.local
 
 # Models and Data
-models/*.pkl
-models/*.pth
-models/*.pt
+models/
+uploads/
 *.pkl
 *.pickle
+*.pth
+*.pt
+*.h5
+*.joblib
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+.cache/
+*.tmp
+*.pyc
+__pycache__/
 
 # Uploads and Logs
 uploads/

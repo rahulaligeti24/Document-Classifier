@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 const connectDB = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
@@ -8,6 +10,17 @@ const uploadRoutes = require('./routes/uploadRoutes');
 
 // Initialize Express app
 const app = express();
+
+// Create upload directories if they don't exist
+const uploadTempDir = process.env.UPLOAD_TEMP_DIR || './uploads/temp';
+const uploadPermanentDir = process.env.UPLOAD_PERMANENT_DIR || './uploads/documents';
+
+[uploadTempDir, uploadPermanentDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`✓ Created directory: ${dir}`);
+  }
+});
 
 // Connect to MongoDB
 connectDB();
@@ -34,6 +47,9 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Serve uploaded files
+app.use('/uploads/documents', express.static(uploadPermanentDir));
 
 // API Routes
 app.use('/api/auth', authRoutes);

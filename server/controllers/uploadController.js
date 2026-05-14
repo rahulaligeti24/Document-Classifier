@@ -7,6 +7,8 @@ const { promisify } = require('util');
 
 // Promisify fs functions to handle file operations properly
 const unlinkAsync = promisify(fs.unlink);
+const copyFileAsync = promisify(fs.copyFile);
+const mkdirAsync = promisify(fs.mkdir);
 
 // Utility function to delete file safely
 const deleteFileSafely = async (filePath) => {
@@ -17,6 +19,25 @@ const deleteFileSafely = async (filePath) => {
   } catch (error) {
     console.error('Error deleting file:', filePath, error.message);
     // Don't throw - just log the error
+  }
+};
+
+// Utility function to move file safely
+const moveFileSafely = async (sourcePath, destinationPath) => {
+  try {
+    // Ensure destination directory exists
+    const destDir = path.dirname(destinationPath);
+    if (!fs.existsSync(destDir)) {
+      await mkdirAsync(destDir, { recursive: true });
+    }
+    
+    // Copy and then delete (move operation)
+    await copyFileAsync(sourcePath, destinationPath);
+    await deleteFileSafely(sourcePath);
+    return true;
+  } catch (error) {
+    console.error('Error moving file:', sourcePath, error.message);
+    return false;
   }
 };
 
@@ -82,8 +103,26 @@ exports.uploadFile = async (req, res) => {
           uploadedAt: upload.createdAt,
         });
 
-        // Clean up temp file
-        await deleteFileSafely(filePath);
+        // Move file to permanent storage
+        const permanentDir = process.env.UPLOAD_PERMANENT_DIR || './uploads/documents';
+        
+        // Ensure directory exists
+        if (!fs.existsSync(permanentDir)) {
+          fs.mkdirSync(permanentDir, { recursive: true });
+        }
+        
+        const permanentPath = path.join(permanentDir, `${upload._id}.pdf`);
+        console.log(`[File Move] Moving ${filename} from ${filePath} to ${permanentPath}`);
+        
+        const moved = await moveFileSafely(filePath, permanentPath);
+        if (moved) {
+          // Update database with permanent path
+          upload.filePath = permanentPath;
+          await upload.save();
+          console.log(`[File Move] ✓ Successfully moved file for upload ${upload._id}`);
+        } else {
+          console.log(`[File Move] ✗ Failed to move file for upload ${upload._id}`);
+        }
       } catch (mlError) {
         console.error(`[Error] Failed to classify ${filename}:`, mlError.message);
 
@@ -104,8 +143,21 @@ exports.uploadFile = async (req, res) => {
           id: failedUpload._id,
         });
 
-        // Clean up temp file
-        await deleteFileSafely(filePath);
+        // Move failed file to permanent storage for reference
+        const permanentDir = process.env.UPLOAD_PERMANENT_DIR || './uploads/documents';
+        
+        // Ensure directory exists
+        if (!fs.existsSync(permanentDir)) {
+          fs.mkdirSync(permanentDir, { recursive: true });
+        }
+        
+        const permanentPath = path.join(permanentDir, `${failedUpload._id}.pdf`);
+        
+        const moved = await moveFileSafely(filePath, permanentPath);
+        if (moved) {
+          failedUpload.filePath = permanentPath;
+          await failedUpload.save();
+        }
       }
     }
 
@@ -286,18 +338,30 @@ exports.downloadUpload = async (req, res) => {
     });
 
     if (!upload) {
+      console.log(`[Download] Upload not found: ${req.params.id}`);
       return res.status(404).json({
         success: false,
         message: 'Upload not found',
       });
     }
 
-    if (!upload.filePath || !fs.existsSync(upload.filePath)) {
+    if (!upload.filePath) {
+      console.log(`[Download] No filePath in database for upload ${req.params.id}`);
       return res.status(404).json({
         success: false,
-        message: 'File not found',
+        message: 'File path not set',
       });
     }
+
+    if (!fs.existsSync(upload.filePath)) {
+      console.log(`[Download] File does not exist at: ${upload.filePath}`);
+      return res.status(404).json({
+        success: false,
+        message: 'File not found on server',
+      });
+    }
+
+    console.log(`[Download] Serving file: ${upload.filePath}`);
 
     // Set appropriate headers for download
     res.setHeader('Content-Type', 'application/pdf');
@@ -311,7 +375,7 @@ exports.downloadUpload = async (req, res) => {
     fileStream.pipe(res);
 
     fileStream.on('error', (err) => {
-      console.error('Error streaming file:', err);
+      console.error('[Download] Error streaming file:', err);
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
@@ -320,6 +384,7 @@ exports.downloadUpload = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('[Download] Unexpected error:', error);
     res.status(error.statusCode || 500).json({
       success: false,
       message: error.message || 'Server Error',
@@ -338,18 +403,30 @@ exports.viewUpload = async (req, res) => {
     });
 
     if (!upload) {
+      console.log(`[View] Upload not found: ${req.params.id}`);
       return res.status(404).json({
         success: false,
         message: 'Upload not found',
       });
     }
 
-    if (!upload.filePath || !fs.existsSync(upload.filePath)) {
+    if (!upload.filePath) {
+      console.log(`[View] No filePath in database for upload ${req.params.id}`);
       return res.status(404).json({
         success: false,
-        message: 'File not found',
+        message: 'File path not set',
       });
     }
+
+    if (!fs.existsSync(upload.filePath)) {
+      console.log(`[View] File does not exist at: ${upload.filePath}`);
+      return res.status(404).json({
+        success: false,
+        message: 'File not found on server',
+      });
+    }
+
+    console.log(`[View] Serving file: ${upload.filePath}`);
 
     // Set appropriate headers for inline viewing
     res.setHeader('Content-Type', 'application/pdf');
@@ -360,7 +437,7 @@ exports.viewUpload = async (req, res) => {
     fileStream.pipe(res);
 
     fileStream.on('error', (err) => {
-      console.error('Error streaming file:', err);
+      console.error('[View] Error streaming file:', err);
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
@@ -369,6 +446,7 @@ exports.viewUpload = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('[View] Unexpected error:', error);
     res.status(error.statusCode || 500).json({
       success: false,
       message: error.message || 'Server Error',

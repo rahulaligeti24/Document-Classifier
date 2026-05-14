@@ -1,0 +1,39 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.prod
+
+# Logs
+*.log
+logs/
+
+# Misc
+.cache/
+*.tmp
+*.bak
+
+# Do NOT track .env files in ANY folder
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Dependencies - allow each project to manage its own
+# node_modules/ and venv/ are handled by project-specific .gitignore files
+
+# Uploads and temporary files
+**/uploads/temp/
+**/uploads/documents/
+**/config/uploads/
+**/config/logs/
